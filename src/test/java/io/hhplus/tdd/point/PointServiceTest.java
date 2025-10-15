@@ -31,7 +31,7 @@ class PointServiceTest {
         final long userId = 1L;
         final long point = 500L;
         UserPoint expectedUserPoint = new UserPoint(userId, point, System.currentTimeMillis());
-        // 정상적으로 조회된 회원 포인트 데이터를 위한 STUB 객체가 생성 되도록..
+        // 정상적으로 조회된 회원 포인트 데이터 생성을 위한 STUB 객체가 생성 되도록..
         Mockito.when(userPointTable.selectById(userId)).thenReturn(expectedUserPoint);
 
         // 실제 pointService 테스트 객체로부터 UserPoint 조회
@@ -50,13 +50,17 @@ class PointServiceTest {
 
         final long nonExistentUserId = 999L;
 
+        // 존재 하지 않는 회원에 대해서는 empty 정적 팩토리 메소드 호출을 통한 빈 데이터가 생성 되어야 하므로
+        // 아래와 같은 STUB 데이터 생성 처리..!
         UserPoint emptyUserPoint = UserPoint.empty(nonExistentUserId);
         Mockito.when(userPointTable.selectById(nonExistentUserId)).thenReturn(emptyUserPoint);
 
         UserPoint actualUserPoint = pointService.findUserPointById(nonExistentUserId);
 
+        // 데이터 검증
         Assertions.assertNotNull(actualUserPoint);
         Assertions.assertEquals(emptyUserPoint.id(), actualUserPoint.id());
+        // 해당 회원의 포인트는 0 이어야 한다.
         Assertions.assertEquals(EMPTY_POINT, actualUserPoint.point() );
     }
 

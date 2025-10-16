@@ -2,7 +2,6 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
-import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -16,6 +15,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import java.util.List;
 import java.util.stream.Stream;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.verify;
@@ -49,10 +49,10 @@ class PointServiceTest {
         UserPoint actualUserPoint = pointService.findUserPointByUserId(userId);
 
         // pointService 가 userPointTable 로 부터 조회해온 객체는 null 일 수 없음을 확인
-        Assertions.assertNotNull(actualUserPoint);
+        assertThat(actualUserPoint).isNotNull();
         // 조회된 id, point 가 같아야 함
-        Assertions.assertEquals(expectedUserPoint.id(), actualUserPoint.id());
-        Assertions.assertEquals(expectedUserPoint.point(), actualUserPoint.point());
+        assertThat(actualUserPoint.id()).isEqualTo(expectedUserPoint.id());
+        assertThat(actualUserPoint.point()).isEqualTo(expectedUserPoint.point());
     }
 
     @Test
@@ -69,10 +69,10 @@ class PointServiceTest {
         UserPoint actualUserPoint = pointService.findUserPointByUserId(nonExistentUserId);
 
         // 데이터 검증
-        Assertions.assertNotNull(actualUserPoint);
-        Assertions.assertEquals(emptyUserPoint.id(), actualUserPoint.id());
-        // 해당 회원 객체의 포인트는 0 이어야 한다.
-        Assertions.assertEquals(EMPTY_POINT, actualUserPoint.point() );
+        assertThat(actualUserPoint).isNotNull();
+        assertThat(actualUserPoint.id()).isEqualTo(emptyUserPoint.id());
+        // 해당 회원 객체의 point는 0 이어야 한다.
+        assertThat(actualUserPoint.point()).isEqualTo(emptyUserPoint.point());
     }
 
     @ParameterizedTest
@@ -86,11 +86,11 @@ class PointServiceTest {
         List<PointHistory> actualPointHistories = pointService.findAllPointHistoryByUserId(userId);
 
         // 실제 조회된 객체는 null 일 수 없으므로 not null 체크
-        Assertions.assertNotNull(actualPointHistories);
+        assertThat(actualPointHistories).isNotNull();
         // 두 객체 간의 size 비교 (일치 해야함)
-        Assertions.assertEquals(pointHistoryStubs.size(), actualPointHistories.size());
+        assertThat(actualPointHistories.size()).isEqualTo(pointHistoryStubs.size());
         // PointHistory가 record 타입이므로 List 전체를 아래와 같이 비교..
-        Assertions.assertEquals(pointHistoryStubs, actualPointHistories);
+        assertThat(actualPointHistories).hasSameElementsAs(pointHistoryStubs);
     }
 
     @Test
@@ -114,9 +114,9 @@ class PointServiceTest {
         UserPoint actualUserPoint = pointService.chargePoint(userId, pointToCharge);
 
         // then
-        Assertions.assertNotNull(actualUserPoint);
-        Assertions.assertEquals(newUserPoint.id(), actualUserPoint.id());
-        Assertions.assertEquals(newUserPoint.point(), actualUserPoint.point());
+        assertThat(actualUserPoint).isNotNull();
+        assertThat(actualUserPoint.id()).isEqualTo(newUserPoint.id());
+        assertThat(actualUserPoint.point()).isEqualTo(newUserPoint.point());
 
         // 행위 검증
         verify(userPointTable).insertOrUpdate(userId, chargedPoint);
@@ -144,9 +144,9 @@ class PointServiceTest {
         UserPoint actualUserPoint = pointService.usePoint(userId, pointToUse);
 
         // then
-        Assertions.assertNotNull(actualUserPoint);
-        Assertions.assertEquals(newUserPoint.id(), actualUserPoint.id());
-        Assertions.assertEquals(newUserPoint.point(), actualUserPoint.point());
+        assertThat(actualUserPoint).isNotNull();
+        assertThat(actualUserPoint.id()).isEqualTo(newUserPoint.id());
+        assertThat(actualUserPoint.point()).isEqualTo(newUserPoint.point());
 
         // 행위 검증
         verify(userPointTable).insertOrUpdate(userId, leftPoint);

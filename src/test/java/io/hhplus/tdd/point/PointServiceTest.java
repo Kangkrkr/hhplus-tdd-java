@@ -11,11 +11,15 @@ import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
 import java.util.stream.Stream;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.ArgumentMatchers.*;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class PointServiceTest {
@@ -32,14 +36,14 @@ class PointServiceTest {
     final long EMPTY_POINT = 0L;
 
     @Test
-    @DisplayName("유효한 USER ID 가 입력된 경우, 정상적으로 회원의 보유 포인트가 조회 되어야 한다.")
+    @DisplayName("유효한 USER ID 가 입력된 경우, 정상적으로 UserPoint 가 조회 되어야 한다.")
     public void givenExistentUserId_whenCallingFindByUserId_thenReturnsUserPoint() {
 
         final long userId = 1L;
         final long point = 500L;
         UserPoint expectedUserPoint = new UserPoint(userId, point, System.currentTimeMillis());
         // 정상적으로 조회된 회원 포인트 데이터 생성을 위한 STUB 객체가 생성 되도록..
-        Mockito.when(userPointTable.selectById(userId)).thenReturn(expectedUserPoint);
+        when(userPointTable.selectById(userId)).thenReturn(expectedUserPoint);
 
         // 실제 pointService 테스트 객체로부터 UserPoint 조회
         UserPoint actualUserPoint = pointService.findUserPointByUserId(userId);
@@ -60,7 +64,7 @@ class PointServiceTest {
         // 존재 하지 않는 회원에 대해서는 empty 정적 팩토리 메소드 호출을 통한 빈 데이터가 생성 되어야 하므로
         // 아래와 같은 STUB 데이터 생성 처리..!
         UserPoint emptyUserPoint = UserPoint.empty(nonExistentUserId);
-        Mockito.when(userPointTable.selectById(nonExistentUserId)).thenReturn(emptyUserPoint);
+        when(userPointTable.selectById(nonExistentUserId)).thenReturn(emptyUserPoint);
 
         UserPoint actualUserPoint = pointService.findUserPointByUserId(nonExistentUserId);
 
@@ -77,7 +81,7 @@ class PointServiceTest {
     public void givenExistentUserId_whenCallingFindAllPointHistoryByUserId_thenReturnsMatchingPointHistories(final List<PointHistory> pointHistoryStubs) {
         final long userId = 1L;
 
-        Mockito.when(pointHistoryTable.selectAllByUserId(userId)).thenReturn(pointHistoryStubs);
+        when(pointHistoryTable.selectAllByUserId(userId)).thenReturn(pointHistoryStubs);
 
         List<PointHistory> actualPointHistories = pointService.findAllPointHistoryByUserId(userId);
 
@@ -89,6 +93,85 @@ class PointServiceTest {
         Assertions.assertEquals(pointHistoryStubs, actualPointHistories);
     }
 
+    @Test
+    @DisplayName("userId 와 pointAmount 가 정상적으로 주어진 경우, 포인트 충전을 위해 chargePoint 호출 시 정상적으로 UserPoint 객체를 반환 해야한다.")
+    public void givenUserIdAndPointAmount_whenCallingChargePoint_thenReturnsUserPoint() {
+        // given
+        long userId = 1L;
+        long currentPoint = 500L;
+        long pointToCharge = 500L;
+        long chargedPoint = currentPoint + pointToCharge;
+
+        UserPoint foundUserPoint = new UserPoint(userId, currentPoint, System.currentTimeMillis());
+        when(userPointTable.selectById(userId)).thenReturn(foundUserPoint);
+
+        UserPoint newUserPoint = new UserPoint(userId, chargedPoint, System.currentTimeMillis());
+        when(userPointTable.insertOrUpdate(eq(userId), eq(chargedPoint))).thenReturn(newUserPoint);
+        when(pointHistoryTable.insert(eq(userId), eq(pointToCharge), eq(TransactionType.CHARGE), anyLong()))
+                .thenReturn(new PointHistory(1L, userId, pointToCharge, TransactionType.CHARGE, System.currentTimeMillis()));
+
+        // when
+        UserPoint actualUserPoint = pointService.chargePoint(userId, pointToCharge);
+
+        // then
+        Assertions.assertNotNull(actualUserPoint);
+        Assertions.assertEquals(newUserPoint.id(), actualUserPoint.id());
+        Assertions.assertEquals(newUserPoint.point(), actualUserPoint.point());
+
+        // 행위 검증
+        verify(userPointTable).insertOrUpdate(userId, chargedPoint);
+        verify(pointHistoryTable).insert(eq(userId), eq(pointToCharge), eq(TransactionType.CHARGE), anyLong());
+    }
+
+    @Test
+    @DisplayName("userId 와 pointAmount 가 정상적으로 주어진 경우, 포인트 사용을 위해 usePoint 호출 시 정상적으로 UserPoint 객체를 반환 해야한다.")
+    public void givenUserIdAndPointAmount_whenCallingUsePoint_thenReturnsUserPoint() throws Exception {
+        // given
+        final long userId = 1L;
+        final long currentPoint = 500L;
+        final long pointToUse = 300L;
+        final long leftPoint = currentPoint - pointToUse;
+
+        UserPoint foundUserPoint = new UserPoint(userId, currentPoint, System.currentTimeMillis());
+        when(userPointTable.selectById(userId)).thenReturn(foundUserPoint);
+
+        UserPoint newUserPoint = new UserPoint(userId, leftPoint, System.currentTimeMillis());
+        when(userPointTable.insertOrUpdate(eq(userId), eq(leftPoint))).thenReturn(newUserPoint);
+        when(pointHistoryTable.insert(eq(userId), eq(pointToUse), eq(TransactionType.USE), anyLong()))
+                .thenReturn(new PointHistory(1L, userId, pointToUse, TransactionType.USE, System.currentTimeMillis()));
+
+        // when
+        UserPoint actualUserPoint = pointService.usePoint(userId, pointToUse);
+
+        // then
+        Assertions.assertNotNull(actualUserPoint);
+        Assertions.assertEquals(newUserPoint.id(), actualUserPoint.id());
+        Assertions.assertEquals(newUserPoint.point(), actualUserPoint.point());
+
+        // 행위 검증
+        verify(userPointTable).insertOrUpdate(userId, leftPoint);
+        verify(pointHistoryTable).insert(eq(userId), eq(pointToUse), eq(TransactionType.USE), anyLong());
+    }
+
+    @Test
+    @DisplayName("포인트 사용 시, 잔고가 부족한 경우 예외가 발생 하여야 한다.")
+    public void givenUserIdAndPointAmount_whenCallingUsePoint_thenThrowsException() {
+        // given
+        final long userId = 1L;
+        final long currentPoint = 500L;
+        final long pointToUse = 600L;
+
+        UserPoint foundUserPoint = new UserPoint(userId, currentPoint, System.currentTimeMillis());
+        when(userPointTable.selectById(userId)).thenReturn(foundUserPoint);
+
+        // when & then
+        // pointService.usePoint를 실행했을 때,
+        assertThatThrownBy(() -> pointService.usePoint(userId, pointToUse))
+                .isInstanceOf(Exception.class)   // Exception 타입의 예외가 발생해야 하고,
+                .hasMessage("잔고가 부족 합니다."); // 예외 메시지가 "잔고가 부족 합니다." 여야 한다.
+
+    }
+
    private static Stream<Arguments> providePointHistoryStubs() {
        final long userId = 1L;
        List<PointHistory> historyStubs = List.of(
@@ -98,8 +181,5 @@ class PointServiceTest {
         );
         return Stream.of(Arguments.of(historyStubs));
     }
-
-
-
 
 }

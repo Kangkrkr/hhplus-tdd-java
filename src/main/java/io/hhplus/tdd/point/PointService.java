@@ -31,33 +31,43 @@ public class PointService {
         return pointHistoryTable.selectAllByUserId(userId);
     }
 
-    public UserPoint chargePoint(final long userId, final long point) {
+    public UserPoint chargePoint(final long userId, final long pointToCharge) throws Exception {
+        // 잘못된 포인트가 인자로 넘어 온 경우 예외를 통한 early return ..
+        if (pointToCharge <= 0) {
+            throw new Exception("충전할 포인트는 0 이상이어야 합니다.");
+        }
+
         // 충전 대상을 조회
         final UserPoint foundUserPoint = userPointTable.selectById(userId);
 
         // 기존 포인트에 충전 포인트를 합산..
-        final long chargedPoint = foundUserPoint.point() + point;
+        final long chargedPoint = foundUserPoint.point() + pointToCharge;
         // 데이터 업데이트
         final UserPoint newUserPoint = userPointTable.insertOrUpdate(userId, chargedPoint);
 
         // 포인트 충전 이력 남기기
-        pointHistoryTable.insert(userId, point, CHARGE, System.currentTimeMillis());
+        pointHistoryTable.insert(userId, pointToCharge, CHARGE, System.currentTimeMillis());
 
         return newUserPoint;
     }
 
-    public UserPoint usePoint(final long userId, final long point) throws Exception {
-        final UserPoint foundUserPoint = userPointTable.selectById(userId);
+    public UserPoint usePoint(final long userId, final long pointToUse) throws Exception {
+        // 잘못된 포인트가 인자로 넘어 온 경우 예외를 통한 early return ..
+        if (pointToUse <= 0) {
+            throw new Exception("사용할 포인트는 0 이상이어야 합니다.");
+        }
 
-        final long usePoint = foundUserPoint.point() - point;
-        if (usePoint < 0) {
+        final UserPoint foundUserPoint = userPointTable.selectById(userId);
+        final long leftPoint = foundUserPoint.point() - pointToUse;
+        if (leftPoint < 0) {
             // 잔고가 부족 하므로 예외 throw..
+            // 나중에 커스텀 예외를 만들어서 처리 하면 좋을 것 같다.
             throw new Exception("잔고가 부족 합니다.");
         }
 
-        final UserPoint userPoint = userPointTable.insertOrUpdate(userId, usePoint);
+        final UserPoint userPoint = userPointTable.insertOrUpdate(userId, leftPoint);
 
-        pointHistoryTable.insert(userPoint.id(), point, USE, System.currentTimeMillis());
+        pointHistoryTable.insert(userPoint.id(), pointToUse, USE, System.currentTimeMillis());
 
         return userPoint;
     }

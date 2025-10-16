@@ -8,6 +8,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -33,7 +34,6 @@ class PointServiceTest {
     @Mock
     private PointHistoryTable pointHistoryTable;
 
-    final long EMPTY_POINT = 0L;
 
     @Test
     @DisplayName("유효한 USER ID 가 입력된 경우, 정상적으로 UserPoint 가 조회 되어야 한다.")
@@ -95,7 +95,7 @@ class PointServiceTest {
 
     @Test
     @DisplayName("userId 와 pointAmount 가 정상적으로 주어진 경우, 포인트 충전을 위해 chargePoint 호출 시 정상적으로 UserPoint 객체를 반환 해야한다.")
-    public void givenUserIdAndPointAmount_whenCallingChargePoint_thenReturnsUserPoint() {
+    public void givenUserIdAndPointAmount_whenCallingChargePoint_thenReturnsUserPoint() throws Exception {
         // given
         long userId = 1L;
         long currentPoint = 500L;
@@ -121,6 +121,18 @@ class PointServiceTest {
         // 행위 검증
         verify(userPointTable).insertOrUpdate(userId, chargedPoint);
         verify(pointHistoryTable).insert(eq(userId), eq(pointToCharge), eq(TransactionType.CHARGE), anyLong());
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {0L, -100L})
+    @DisplayName("충전할 포인트가 0 이하(유효하지 않은) 경우, 예외를 발생시켜야 한다.")
+    public void givenInvalidPointToCharge_whenCallingChargePoint_thenThrowsException(final long pointToCharge) {
+        // given
+        long userId = 1L;
+
+        assertThatThrownBy(() -> pointService.chargePoint(userId, pointToCharge))
+                .isInstanceOf(Exception.class)
+                .hasMessage("충전할 포인트는 0 이상이어야 합니다.");
     }
 
     @Test
@@ -155,7 +167,7 @@ class PointServiceTest {
 
     @Test
     @DisplayName("포인트 사용 시, 잔고가 부족한 경우 예외가 발생 하여야 한다.")
-    public void givenUserIdAndPointAmount_whenCallingUsePoint_thenThrowsException() {
+    public void givenPointToUseIsBiggerThenCurrentPoint_whenCallingUsePoint_thenThrowsException() {
         // given
         final long userId = 1L;
         final long currentPoint = 500L;
@@ -169,7 +181,19 @@ class PointServiceTest {
         assertThatThrownBy(() -> pointService.usePoint(userId, pointToUse))
                 .isInstanceOf(Exception.class)   // Exception 타입의 예외가 발생해야 하고,
                 .hasMessage("잔고가 부족 합니다."); // 예외 메시지가 "잔고가 부족 합니다." 여야 한다.
+    }
 
+    @ParameterizedTest
+    @ValueSource(longs = { 0L, -100L })
+    @DisplayName("포인트 사용 시, 사용 하고자 하는 포인트 금액이 0 이하인 경우(유효하지 않은) 예외가 발생 하여야 한다.")
+    public void givenInvalidPointToUse_whenCallingUsePoint_thenThrowsException(final long pointToUse) {
+        // given
+        final long userId = 1L;
+
+        // when & then
+        assertThatThrownBy(() -> pointService.usePoint(userId, pointToUse))
+                .isInstanceOf(Exception.class)
+                .hasMessage("사용할 포인트는 0 이상이어야 합니다.");
     }
 
    private static Stream<Arguments> providePointHistoryStubs() {

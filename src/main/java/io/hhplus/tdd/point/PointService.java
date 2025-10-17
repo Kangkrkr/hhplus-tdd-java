@@ -2,6 +2,8 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.exception.IllegalPointException;
+import io.hhplus.tdd.exception.InsufficientPointException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -31,10 +33,10 @@ public class PointService {
         return pointHistoryTable.selectAllByUserId(userId);
     }
 
-    public UserPoint chargePoint(final long userId, final long pointToCharge) throws Exception {
+    public synchronized UserPoint chargePoint(final long userId, final long pointToCharge) throws IllegalPointException {
         // 잘못된 포인트가 인자로 넘어 온 경우 예외를 통한 early return ..
         if (pointToCharge <= 0) {
-            throw new Exception("충전할 포인트는 0 이상이어야 합니다.");
+            throw new IllegalPointException("충전할 포인트는 0 이상이어야 합니다.");
         }
 
         // 충전 대상을 조회
@@ -51,18 +53,17 @@ public class PointService {
         return newUserPoint;
     }
 
-    public UserPoint usePoint(final long userId, final long pointToUse) throws Exception {
+    public synchronized UserPoint usePoint(final long userId, final long pointToUse) throws InsufficientPointException, IllegalPointException {
         // 잘못된 포인트가 인자로 넘어 온 경우 예외를 통한 early return ..
         if (pointToUse <= 0) {
-            throw new Exception("사용할 포인트는 0 이상이어야 합니다.");
+            throw new IllegalPointException("사용할 포인트는 0 이상이어야 합니다.");
         }
 
         final UserPoint foundUserPoint = userPointTable.selectById(userId);
         final long leftPoint = foundUserPoint.point() - pointToUse;
         if (leftPoint < 0) {
             // 잔고가 부족 하므로 예외 throw..
-            // 나중에 커스텀 예외를 만들어서 처리 하면 좋을 것 같다.
-            throw new Exception("잔고가 부족 합니다.");
+            throw new InsufficientPointException("잔고가 부족 합니다.");
         }
 
         final UserPoint userPoint = userPointTable.insertOrUpdate(userId, leftPoint);

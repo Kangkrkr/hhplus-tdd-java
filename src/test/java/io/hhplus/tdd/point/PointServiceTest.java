@@ -2,6 +2,8 @@ package io.hhplus.tdd.point;
 
 import io.hhplus.tdd.database.PointHistoryTable;
 import io.hhplus.tdd.database.UserPointTable;
+import io.hhplus.tdd.exception.IllegalPointException;
+import io.hhplus.tdd.exception.InsufficientPointException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -95,7 +97,7 @@ class PointServiceTest {
 
     @Test
     @DisplayName("userId 와 pointAmount 가 정상적으로 주어진 경우, 포인트 충전을 위해 chargePoint 호출 시 정상적으로 UserPoint 객체를 반환 해야한다.")
-    public void givenUserIdAndPointAmount_whenCallingChargePoint_thenReturnsUserPoint() throws Exception {
+    public void givenUserIdAndPointAmount_whenCallingChargePoint_thenReturnsUserPoint() throws IllegalPointException {
         // given
         long userId = 1L;
         long currentPoint = 500L;
@@ -131,13 +133,13 @@ class PointServiceTest {
         long userId = 1L;
 
         assertThatThrownBy(() -> pointService.chargePoint(userId, pointToCharge))
-                .isInstanceOf(Exception.class)
+                .isInstanceOf(IllegalPointException.class)
                 .hasMessage("충전할 포인트는 0 이상이어야 합니다.");
     }
 
     @Test
     @DisplayName("userId 와 pointAmount 가 정상적으로 주어진 경우, 포인트 사용을 위해 usePoint 호출 시 정상적으로 UserPoint 객체를 반환 해야한다.")
-    public void givenUserIdAndPointAmount_whenCallingUsePoint_thenReturnsUserPoint() throws Exception {
+    public void givenUserIdAndPointAmount_whenCallingUsePoint_thenReturnsUserPoint() throws InsufficientPointException, IllegalPointException {
         // given
         final long userId = 1L;
         final long currentPoint = 500L;
@@ -179,7 +181,7 @@ class PointServiceTest {
         // when & then
         // pointService.usePoint를 실행했을 때,
         assertThatThrownBy(() -> pointService.usePoint(userId, pointToUse))
-                .isInstanceOf(Exception.class)   // Exception 타입의 예외가 발생해야 하고,
+                .isInstanceOf(InsufficientPointException.class)   // Exception 타입의 예외가 발생 해야 하고,
                 .hasMessage("잔고가 부족 합니다."); // 예외 메시지가 "잔고가 부족 합니다." 여야 한다.
     }
 
@@ -192,7 +194,7 @@ class PointServiceTest {
 
         // when & then
         assertThatThrownBy(() -> pointService.usePoint(userId, pointToUse))
-                .isInstanceOf(Exception.class)
+                .isInstanceOf(IllegalPointException.class)
                 .hasMessage("사용할 포인트는 0 이상이어야 합니다.");
     }
 

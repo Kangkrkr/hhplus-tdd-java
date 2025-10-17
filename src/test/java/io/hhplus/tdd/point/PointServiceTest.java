@@ -46,7 +46,12 @@ class PointServiceTest {
 
             final long userId = 1L;
             final long point = 500L;
-            UserPoint expectedUserPoint = new UserPoint(userId, point, System.currentTimeMillis());
+            UserPoint expectedUserPoint = UserPoint.of()
+                                                   .id(userId)
+                                                   .point(point)
+                                                   .updateMillis(System.currentTimeMillis())
+                                                   .build();
+
             // 정상적으로 조회된 회원 포인트 데이터 생성을 위한 STUB 객체가 생성 되도록..
             when(userPointTable.selectById(userId)).thenReturn(expectedUserPoint);
 
@@ -55,9 +60,8 @@ class PointServiceTest {
 
             // pointService 가 userPointTable 로 부터 조회해온 객체는 null 일 수 없음을 확인
             assertThat(actualUserPoint).isNotNull();
-            // 조회된 id, point 가 같아야 함
-            assertThat(actualUserPoint.id()).isEqualTo(expectedUserPoint.id());
-            assertThat(actualUserPoint.point()).isEqualTo(expectedUserPoint.point());
+            // 두 객체의 값이 "동등" 해야 함.
+            assertThat(actualUserPoint).isEqualTo(expectedUserPoint);
         }
 
         @Test
@@ -75,9 +79,8 @@ class PointServiceTest {
 
             // 데이터 검증
             assertThat(actualUserPoint).isNotNull();
-            assertThat(actualUserPoint.id()).isEqualTo(emptyUserPoint.id());
-            // 해당 회원 객체의 point는 0 이어야 한다.
-            assertThat(actualUserPoint.point()).isEqualTo(emptyUserPoint.point());
+            // 조회된 회원 포인트 객체는 빈(empty) 회원 포인트 객체와 동등 해야 한다 !
+            assertThat(actualUserPoint).isEqualTo(emptyUserPoint);
         }
     }
 
@@ -116,21 +119,37 @@ class PointServiceTest {
             long pointToCharge = 500L;
             long chargedPoint = currentPoint + pointToCharge;
 
-            UserPoint foundUserPoint = new UserPoint(userId, currentPoint, System.currentTimeMillis());
-            when(userPointTable.selectById(userId)).thenReturn(foundUserPoint);
+            UserPoint currentUserPoint = UserPoint.of()
+                                                .id(userId)
+                                                .point(currentPoint)
+                                                .updateMillis(System.currentTimeMillis())
+                                                .build();
 
-            UserPoint newUserPoint = new UserPoint(userId, chargedPoint, System.currentTimeMillis());
-            when(userPointTable.insertOrUpdate(eq(userId), eq(chargedPoint))).thenReturn(newUserPoint);
+            when(userPointTable.selectById(userId)).thenReturn(currentUserPoint);
+
+            UserPoint chargedUserPoint = UserPoint.of()
+                                                  .id(userId)
+                                                  .point(chargedPoint)
+                                                  .updateMillis(System.currentTimeMillis())
+                                                  .build();
+
+            when(userPointTable.insertOrUpdate(eq(userId), eq(chargedPoint))).thenReturn(chargedUserPoint);
             when(pointHistoryTable.insert(eq(userId), eq(pointToCharge), eq(TransactionType.CHARGE), anyLong()))
-                    .thenReturn(new PointHistory(1L, userId, pointToCharge, TransactionType.CHARGE, System.currentTimeMillis()));
+                    .thenReturn(PointHistory.of()
+                                            .id(1L)
+                                            .userId(userId)
+                                            .amount(pointToCharge)
+                                            .type(TransactionType.CHARGE)
+                                            .updateMillis(System.currentTimeMillis())
+                                            .build());
 
             // when
             UserPoint actualUserPoint = pointService.chargePoint(userId, pointToCharge);
 
             // then
             assertThat(actualUserPoint).isNotNull();
-            assertThat(actualUserPoint.id()).isEqualTo(newUserPoint.id());
-            assertThat(actualUserPoint.point()).isEqualTo(newUserPoint.point());
+            assertThat(actualUserPoint.id()).isEqualTo(chargedUserPoint.id());
+            assertThat(actualUserPoint.point()).isEqualTo(chargedUserPoint.point());
 
             // 행위 검증
             verify(userPointTable).insertOrUpdate(userId, chargedPoint);
@@ -162,13 +181,29 @@ class PointServiceTest {
             final long pointToUse = 300L;
             final long leftPoint = currentPoint - pointToUse;
 
-            UserPoint foundUserPoint = new UserPoint(userId, currentPoint, System.currentTimeMillis());
+            UserPoint foundUserPoint = UserPoint.of()
+                                                .id(userId)
+                                                .point(currentPoint)
+                                                .updateMillis(System.currentTimeMillis())
+                                                .build();
+
             when(userPointTable.selectById(userId)).thenReturn(foundUserPoint);
 
-            UserPoint newUserPoint = new UserPoint(userId, leftPoint, System.currentTimeMillis());
+            UserPoint newUserPoint = UserPoint.of()
+                                              .id(userId)
+                                              .point(leftPoint)
+                                              .updateMillis(System.currentTimeMillis())
+                                              .build();
+
             when(userPointTable.insertOrUpdate(eq(userId), eq(leftPoint))).thenReturn(newUserPoint);
             when(pointHistoryTable.insert(eq(userId), eq(pointToUse), eq(TransactionType.USE), anyLong()))
-                    .thenReturn(new PointHistory(1L, userId, pointToUse, TransactionType.USE, System.currentTimeMillis()));
+                    .thenReturn(PointHistory.of()
+                                            .id(1L)
+                                            .userId(userId)
+                                            .amount(pointToUse)
+                                            .type(TransactionType.USE)
+                                            .updateMillis(System.currentTimeMillis())
+                                            .build());
 
             // when
             UserPoint actualUserPoint = pointService.usePoint(userId, pointToUse);

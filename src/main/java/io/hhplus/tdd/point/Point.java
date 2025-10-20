@@ -8,12 +8,18 @@ import lombok.Getter;
 @Getter
 public final class Point {
 
-    public static Point ZERO = Point.of().point(0).build();
+    public static Point ZERO = Point.of(0);
 
     private final long point;
 
-    @Builder(builderMethodName = "of")
-    public Point(long point) {
+    public static Point of(final long point) {
+        return Point.builder()
+                    .point(point)
+                    .build();
+    }
+
+    @Builder
+    private Point(long point) {
         if (point < 0) {
             throw new IllegalPointException("유효하지 않은 포인트 입니다.");
         }
@@ -26,9 +32,7 @@ public final class Point {
             throw new IllegalPointException("충전할 포인트는 0 이상이어야 합니다.");
         }
 
-        return Point.of()
-                    .point(this.point + pointToCharge)
-                    .build();
+        return Point.of(this.point + pointToCharge);
     }
 
     public Point use(final long pointToUse) {
@@ -41,8 +45,6 @@ public final class Point {
             throw new InsufficientPointException("잔고가 부족 합니다.");
         }
 
-        return Point.of()
-                    .point(currentPoint)
-                    .build();
+        return Point.of(currentPoint);
     }
 }

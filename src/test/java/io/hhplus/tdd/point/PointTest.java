@@ -20,9 +20,7 @@ class PointTest {
         final long point = -100L;
 
         Assertions.assertThatThrownBy(() -> {
-                      Point.of()
-                           .point(point)
-                           .build();
+                      Point.of(point);
                   }).isInstanceOf(IllegalPointException.class)
                   .hasMessage("유효하지 않은 포인트 입니다.");
     }
@@ -32,9 +30,7 @@ class PointTest {
     @DisplayName("유효한 포인트 입력 시(0 이상), Point 도메인 객체 생성에 대해 성공 하여야 한다.")
     public void givenValidPoint_whenCreatePoint_thenReturnSuccess(final long expectedPoint) {
 
-        Point actualPoint = Point.of()
-                                 .point(expectedPoint)
-                                 .build();
+        Point actualPoint = Point.of(expectedPoint);
 
         assertThat(actualPoint).isNotNull();
         assertThat(actualPoint.getPoint()).isEqualTo(expectedPoint);
@@ -48,9 +44,7 @@ class PointTest {
         @DisplayName("충전할 Point 에 대해 음수 값이 주어진 경우 IllegalPointException 예외가 발생하여야 한다.")
         public void givenIllegalPoint_whenCallingCharge_thenThrowsIllegalPointException() {
             // given -> 100 원의 포인트를 가진 회원이 있다고 가정..
-            Point currentPoint = Point.of()
-                                      .point(100L)
-                                      .build();
+            Point currentPoint = Point.of(100L);
 
             assertThatThrownBy(() -> {
                 // -100 원을 충전 시도 한다 ?
@@ -64,9 +58,7 @@ class PointTest {
         @DisplayName("유효한 충전 포인트가 주어진 경우(0 이상), 현재 포인트에 대해 정상적으로 충전된 Point 가 생성 및 반환 되어야 한다.")
         public void givenValidPoint_whenCallingCharge_thenReturnSuccess(final long pointToCharge) {
             // given -> 현재 회원의 포인트는 100 원, 충전할 금액은 50 원
-            Point currentPoint = Point.of()
-                                      .point(100L)
-                                      .build();
+            Point currentPoint = Point.of(100L);
             // 충전 후 150 원이 되어야 한다.
             final long expectedPoint = 100L + pointToCharge;
 
@@ -84,9 +76,7 @@ class PointTest {
         @Test
         @DisplayName("사용할 Point 에 대해 음수 값이 주어진 경우 IllegalPointException 예외가 발생하여야 한다.")
         public void givenIllegalPoint_whenCallingUse_thenThrowsIllegalPointException() {
-            Point currentPoint = Point.of()
-                                      .point(100L)
-                                      .build();
+            Point currentPoint = Point.of(100L);
 
             assertThatThrownBy(() -> {
                 // -100 원을 사용 시도 한다 ?
@@ -100,9 +90,7 @@ class PointTest {
         @DisplayName("유효한 사용 포인트가 주어진 경우, 현재 포인트에 대해 정상적으로 사용된 Point 가 생성 및 반환 되어야 한다.")
         public void givenValidPoint_whenCallingUse_thenReturnSuccess(final long pointToUse) {
             // given -> 현재 회원의 포인트는 100 원, 사용할 금액은 50 원
-            Point currentPoint = Point.of()
-                                      .point(100L)
-                                      .build();
+            Point currentPoint = Point.of(100L);
             // 사용 후 50 원이 남아야 한다.
             final long expectedPoint = 100L - pointToUse;
 
@@ -115,9 +103,7 @@ class PointTest {
         @DisplayName("사용하고자 하는 포인트가 잔액 보다 많은 경우, 포인트 잔고 부족(InsufficientPointException) 가 발생 하여야 한다.")
         public void givenPointToUseGreaterThenCurrentPoint_whenCallingUse_thenThrowsInsufficientPointException() {
             // given -> 현재 회원의 포인트는 200 원, 사용할 금액은 300 원
-            Point currentPoint = Point.of()
-                                      .point(200L)
-                                      .build();
+            Point currentPoint = Point.of(200L);
 
             final long pointToUse = 300L;
 

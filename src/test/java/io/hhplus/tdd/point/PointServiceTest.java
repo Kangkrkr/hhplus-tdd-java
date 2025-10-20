@@ -45,10 +45,9 @@ class PointServiceTest {
         public void givenExistentUserId_whenCallingFindByUserId_thenReturnsUserPoint() {
 
             final long userId = 1L;
-            final long point = 500L;
             UserPoint expectedUserPoint = UserPoint.of()
                                                    .id(userId)
-                                                   .point(point)
+                                                   .point(Point.of(500L))
                                                    .updateMillis(System.currentTimeMillis())
                                                    .build();
 
@@ -115,9 +114,9 @@ class PointServiceTest {
         public void givenUserIdAndPointAmount_whenCallingChargePoint_thenReturnsUserPoint() {
             // given
             long userId = 1L;
-            long currentPoint = 500L;
+            Point currentPoint = Point.of(500L);
             long pointToCharge = 500L;
-            long chargedPoint = currentPoint + pointToCharge;
+            Point chargedPoint = currentPoint.charge(pointToCharge);
 
             UserPoint currentUserPoint = UserPoint.of()
                                                 .id(userId)
@@ -177,9 +176,9 @@ class PointServiceTest {
         public void givenUserIdAndPointAmount_whenCallingUsePoint_thenReturnsUserPoint() {
             // given
             final long userId = 1L;
-            final long currentPoint = 500L;
+            final Point currentPoint = Point.of(500L);
             final long pointToUse = 300L;
-            final long leftPoint = currentPoint - pointToUse;
+            final Point leftPoint = currentPoint.use(pointToUse);
 
             UserPoint foundUserPoint = UserPoint.of()
                                                 .id(userId)
@@ -223,7 +222,7 @@ class PointServiceTest {
         public void givenPointToUseIsBiggerThenCurrentPoint_whenCallingUsePoint_thenThrowsException() {
             // given
             final long userId = 1L;
-            final long currentPoint = 500L;
+            final Point currentPoint = Point.of(500L);
             final long pointToUse = 600L;
 
             UserPoint foundUserPoint = new UserPoint(userId, currentPoint, System.currentTimeMillis());

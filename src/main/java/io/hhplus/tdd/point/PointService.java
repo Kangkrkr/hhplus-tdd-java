@@ -34,19 +34,13 @@ public class PointService {
     }
 
     public synchronized UserPoint chargePoint(final long userId, final long pointToCharge) {
-        // 잘못된 포인트가 인자로 넘어 온 경우 예외를 통한 early return ..
-        if (pointToCharge <= 0) {
-            throw new IllegalPointException("충전할 포인트는 0 이상이어야 합니다.");
-        }
 
         // 충전 대상을 조회
         final UserPoint foundUserPoint = userPointTable.selectById(userId);
-
         // 기존 포인트에 충전 포인트를 합산..
-        final long chargedPoint = foundUserPoint.point() + pointToCharge;
+        final Point chargedPoint = foundUserPoint.point().charge(pointToCharge);
         // 데이터 업데이트
         final UserPoint newUserPoint = userPointTable.insertOrUpdate(userId, chargedPoint);
-
         // 포인트 충전 이력 남기기
         pointHistoryTable.insert(userId, pointToCharge, CHARGE, System.currentTimeMillis());
 
@@ -54,18 +48,8 @@ public class PointService {
     }
 
     public synchronized UserPoint usePoint(final long userId, final long pointToUse) {
-        // 잘못된 포인트가 인자로 넘어 온 경우 예외를 통한 early return ..
-        if (pointToUse <= 0) {
-            throw new IllegalPointException("사용할 포인트는 0 이상이어야 합니다.");
-        }
-
         final UserPoint foundUserPoint = userPointTable.selectById(userId);
-        final long leftPoint = foundUserPoint.point() - pointToUse;
-        if (leftPoint < 0) {
-            // 잔고가 부족 하므로 예외 throw..
-            throw new InsufficientPointException("잔고가 부족 합니다.");
-        }
-
+        final Point leftPoint = foundUserPoint.point().use(pointToUse);
         final UserPoint userPoint = userPointTable.insertOrUpdate(userId, leftPoint);
 
         pointHistoryTable.insert(userPoint.id(), pointToUse, USE, System.currentTimeMillis());

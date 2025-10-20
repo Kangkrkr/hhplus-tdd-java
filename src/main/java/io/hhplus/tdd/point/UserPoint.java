@@ -4,12 +4,12 @@ import lombok.Builder;
 
 public record UserPoint(
         long id,
-        long point,
+        Point point,
         long updateMillis
 ) {
 
     @Builder(builderMethodName = "of")
-    public UserPoint(long id, long point, long updateMillis) {
+    public UserPoint(long id, Point point, long updateMillis) {
         this.id = id;
         this.point = point;
         this.updateMillis = updateMillis;
@@ -18,7 +18,7 @@ public record UserPoint(
     public static UserPoint empty(long id) {
         return UserPoint.of()
                 .id(id)
-                .point(0)
+                .point(Point.ZERO)
                 .updateMillis(System.currentTimeMillis())
                 .build();
     }

@@ -112,7 +112,7 @@ class PointServiceTest {
     public class ChargePointTest {
         @Test
         @DisplayName("userId 와 pointAmount 가 정상적으로 주어진 경우, 포인트 충전을 위해 chargePoint 호출 시 정상적으로 UserPoint 객체를 반환 해야한다.")
-        public void givenUserIdAndPointAmount_whenCallingChargePoint_thenReturnsUserPoint() throws IllegalPointException {
+        public void givenUserIdAndPointAmount_whenCallingChargePoint_thenReturnsUserPoint() {
             // given
             long userId = 1L;
             long currentPoint = 500L;
@@ -174,7 +174,7 @@ class PointServiceTest {
     public class UsePointTests {
         @Test
         @DisplayName("userId 와 pointAmount 가 정상적으로 주어진 경우, 포인트 사용을 위해 usePoint 호출 시 정상적으로 UserPoint 객체를 반환 해야한다.")
-        public void givenUserIdAndPointAmount_whenCallingUsePoint_thenReturnsUserPoint() throws InsufficientPointException, IllegalPointException {
+        public void givenUserIdAndPointAmount_whenCallingUsePoint_thenReturnsUserPoint() {
             // given
             final long userId = 1L;
             final long currentPoint = 500L;

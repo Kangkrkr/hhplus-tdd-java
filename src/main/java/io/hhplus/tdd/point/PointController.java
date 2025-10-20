@@ -1,5 +1,7 @@
 package io.hhplus.tdd.point;
 
+import io.hhplus.tdd.exception.IllegalPointException;
+import io.hhplus.tdd.exception.InsufficientPointException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
@@ -45,7 +47,7 @@ public class PointController {
     public UserPoint charge(
             @PathVariable long id,
             @RequestBody long amount
-    ) throws Exception {
+    ) {
         return pointService.chargePoint(id, amount);
     }
 
@@ -56,7 +58,7 @@ public class PointController {
     public UserPoint use(
             @PathVariable long id,
             @RequestBody long amount
-    ) throws Exception {
+    ) {
         return pointService.usePoint(id, amount);
     }
 }

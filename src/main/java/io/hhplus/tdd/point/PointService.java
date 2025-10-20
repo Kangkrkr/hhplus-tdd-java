@@ -33,7 +33,7 @@ public class PointService {
         return pointHistoryTable.selectAllByUserId(userId);
     }
 
-    public synchronized UserPoint chargePoint(final long userId, final long pointToCharge) throws IllegalPointException {
+    public synchronized UserPoint chargePoint(final long userId, final long pointToCharge) {
         // 잘못된 포인트가 인자로 넘어 온 경우 예외를 통한 early return ..
         if (pointToCharge <= 0) {
             throw new IllegalPointException("충전할 포인트는 0 이상이어야 합니다.");
@@ -53,7 +53,7 @@ public class PointService {
         return newUserPoint;
     }
 
-    public synchronized UserPoint usePoint(final long userId, final long pointToUse) throws InsufficientPointException, IllegalPointException {
+    public synchronized UserPoint usePoint(final long userId, final long pointToUse) {
         // 잘못된 포인트가 인자로 넘어 온 경우 예외를 통한 early return ..
         if (pointToUse <= 0) {
             throw new IllegalPointException("사용할 포인트는 0 이상이어야 합니다.");

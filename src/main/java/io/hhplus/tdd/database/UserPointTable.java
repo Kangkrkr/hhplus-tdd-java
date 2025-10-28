@@ -1,5 +1,6 @@
 package io.hhplus.tdd.database;
 
+import io.hhplus.tdd.point.Point;
 import io.hhplus.tdd.point.UserPoint;
 import org.springframework.stereotype.Component;
 
@@ -20,7 +21,7 @@ public class UserPointTable {
         return table.getOrDefault(id, UserPoint.empty(id));
     }
 
-    public UserPoint insertOrUpdate(long id, long amount) {
+    public UserPoint insertOrUpdate(long id, Point amount) {
         throttle(300);
         UserPoint userPoint = new UserPoint(id, amount, System.currentTimeMillis());
         table.put(id, userPoint);
